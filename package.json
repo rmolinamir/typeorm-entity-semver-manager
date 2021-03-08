@@ -1,6 +1,6 @@
 {
-  "name": "mongoose-document-versioning",
-  "description": "Mongoose Document Versioning SDK.",
+  "name": "mongoose-entity-semver",
+  "description": "Mongoose Entity Semantic Versioning SDK.",
   "version": "1.0.0",
   "main": "dist/index.js",
   "author": "rmolinamir",
@@ -21,7 +21,9 @@
     }
   },
   "dependencies": {
-    "mongoose": "^5.11.19"
+    "deep-object-diff": "^1.1.0",
+    "mongoose": "^5.11.19",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^12.0.1",
@@ -29,6 +31,7 @@
     "@types/bluebird": "^3.5.33",
     "@types/jest": "^26.0.20",
     "@types/node": "^14.14.31",
+    "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "4.16.1",
     "@typescript-eslint/parser": "4.16.1",
     "babel-eslint": "^7.2.3",

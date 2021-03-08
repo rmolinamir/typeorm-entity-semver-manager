@@ -20,18 +20,27 @@ import {
   CollectionInsertOneOptions,
   InsertOneWriteOpResult,
 } from 'mongodb';
+import {
+  Connection,
+  Model,
+  Document,
+} from 'mongoose';
+
+// Types
+import { Shadow } from './shadow';
 
 // TODO: Validate version number via regexp to match strings such as "1.0.0".
 
-export class Vermongo {
+export class MongooseEntitySemVer {
 	static _VERSION = '_version';
 
-  private shadowCollection: Collection;
+	static _INITIAL_VERSION = '1.0.0';
+
+  private models: Record<string, Model<Document>>;
 
   constructor(args: {
-    shadowCollection: Collection;
+    connection: Connection;
   }) {
-    this.shadowCollection = args.shadowCollection;
   }
 
 	/**
@@ -46,7 +55,7 @@ export class Vermongo {
   ): Promise<T | null> {
     const result = await collection.findOne({
       _id,
-      [Vermongo._VERSION]: versionNumber,
+      [MongooseEntitySemVer._VERSION]: versionNumber,
     });
 
 		if (result == null) {
@@ -73,13 +82,12 @@ export class Vermongo {
       },
       {
         sort: {
-          [Vermongo._VERSION]: -1,
+          [MongooseEntitySemVer._VERSION]: -1,
         }
       }
     );
   }
 
-	static List<DBObject> getOldVersions(DBCollection c, Object id) {
 		DBObject query = QueryUtils.between("_id", new BasicDBObject("_id", id)
 				.append("_version", 0), new BasicDBObject("_id", id).append(
 				"_version", Integer.MAX_VALUE));
@@ -103,17 +111,24 @@ export class Vermongo {
 	 * @param options
 	 */
 	public async insertOne<T extends object>(
-    collection: Collection,
-    docs: OptionalId<T>,
+    Model: Model<Document<T>>,
+    docs: WithId<T>,
     options?: CollectionInsertOneOptions,
   ): Promise<InsertOneWriteOpResult<WithId<T>>> {
-		if (docs[Vermongo._VERSION]) {
-			throw new Error('The [_version] property must not be present in the object');
+		if ((docs as Record<string, unknown>)[MongooseEntitySemVer._VERSION]) {
+			throw new Error(`The [${MongooseEntitySemVer._VERSION}] property must not be present in the object`);
     }
 
-    Object.assign(docs, { [Vermongo._VERSION]: 1 });
+    Object.assign(docs, { [MongooseEntitySemVer._VERSION]: 1 });
 
 		const result = await collection.insertOne(docs, options);
+
+    const foo = new Model({
+      id: docs._id,
+      version: MongooseEntitySemVer._INITIAL_VERSION,
+      data: docs,
+      createdAt: new Date(),
+    } as Shadow)
 
     return result;
 	}
@@ -193,29 +208,6 @@ export class Vermongo {
 	}
 
 	/**
-	 * @return the _id property of the object
-	 */
-	static Object getId(BSONObject o) {
-		return o.get("_id");
-	}
-
-	/**
-	 * @return the version number of the object (from the _version property)
-	 */
-
-	static Integer getVersion(BSONObject o) {
-		return (Integer) o.get(_VERSION);
-	}
-
-	/**
-	 * @return true, if the object represents a dummy version inserted to mark a
-	 *         deleted version
-	 */
-	static boolean isDeletedDummyVersion(BSONObject o) {
-		return o.get(_VERSION).toString().startsWith("deleted:");
-	}
-
-	/**
 	 * deletes the object without checking for conflicts. An existing version is
 	 * moved to the shadow collection, along with a dummy version to mark the
 	 * deletion. This dummy version can contain optional meta-data (such as who
@@ -250,53 +242,6 @@ export class Vermongo {
 		collection.remove(new BasicDBObject("_id", id));
 		return base;
 
-	}
-
-	/**
-	 * @return the shadow collection wherein the old versions of documents are
-	 *         stored
-	 */
-	static DBCollection getShadowCollection(DBCollection c) {
-		return c.getCollection("vermongo");
-	}
-
-	/**
-	 * @return an old version of the document with the given id, at the given
-	 *         version number
-	 */
-
-	static DBObject getOldVersion(DBCollection c, Object id, int versionNumber) {
-
-		BasicDBObject query = new BasicDBObject("_id", new BasicDBObject("_id",
-				id).append("_version", versionNumber));
-
-		DBObject result = getShadowCollection(c).findOne(query);
-		if (result == null)
-			return null;
-		result.put("_id", ((BasicDBObject) getId(result)).get("_id"));
-		return result;
-	}
-
-	/**
-	 * The list of old versions does not include the current version of the
-	 * document, but it does include dummy entries to mark the deletion (if the
-	 * document was deleted). The list is ordered by version number.
-	 * 
-	 * @return the list of old version of the document with the given id
-	 */
-	static List<DBObject> getOldVersions(DBCollection c, Object id) {
-		DBObject query = QueryUtils.between("_id", new BasicDBObject("_id", id)
-				.append("_version", 0), new BasicDBObject("_id", id).append(
-				"_version", Integer.MAX_VALUE));
-
-		List<DBObject> result = new ArrayList<DBObject>();
-		for (DBObject o : getShadowCollection(c).find(query).sort(
-				new BasicDBObject("_id", 1))) {
-			o.put("_id", ((BasicDBObject) getId(o)).get("_id"));
-			result.add(o);
-		}
-
-		return result;
 	}
 
 }

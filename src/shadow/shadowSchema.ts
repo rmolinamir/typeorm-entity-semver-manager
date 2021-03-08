@@ -19,23 +19,40 @@ import { Shadow } from './shadow';
  * The shadow schema of a collection that follows the semantic versioning
  * spec.
  */
-export const shadowSchema = new Schema<Document<Shadow>>({
-  id: {
-    type: Schema.Types.String,
-    required: true,
-    unique: true,
+export const shadowSchema = new Schema<Document<Shadow>>(
+  {
+    id: {
+      type: Schema.Types.String,
+      required: true,
+      unique: true,
+    },
+    version: {
+      type: Schema.Types.String,
+      required: true,
+      match: REGEXP_SEM_VER,
+    },
+    data: {
+      type: Schema.Types.Mixed,
+      required: true,
+    },
+    changes: [{
+      type: Schema.Types.Mixed,
+      required: true,
+    }],
+    createdAt: {
+      type: Schema.Types.Date,
+      required: true,
+    },
+    updateAt: {
+      type: Schema.Types.Date,
+      required: true,
+    },
+  } as SchemaDefinition<Shadow>,
+  {
+    _id: true,
+    id: false,
+    autoIndex: true,
+    timestamps: true,
+    versionKey: false,
   },
-  version: {
-    type: Schema.Types.String,
-    required: true,
-    match: REGEXP_SEM_VER,
-  },
-  data: {
-    type: Schema.Types.Mixed,
-    required: true,
-  },
-  createdAt: {
-    type: Schema.Types.Date,
-    required: true,
-  },
-} as SchemaDefinition<Shadow>);
+);
