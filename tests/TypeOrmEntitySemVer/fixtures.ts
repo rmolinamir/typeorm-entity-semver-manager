@@ -1,0 +1,35 @@
+// Valid SemVers taken from `https://semver.org/`
+export const validSemVers: string[] = [
+  '1.0.0-alpha',
+  '1.0.0-alpha.1',
+  '1.0.0-alpha.beta',
+  '1.0.0-beta',
+  '1.0.0-beta.2',
+  '1.0.0-beta.11',
+  '1.0.0-rc.1',
+  '1.0.0',
+  '0.0.0',
+  '1.0.0-alpha+001',
+  '1.0.0+20130313144700',
+  '1.0.0-beta+exp.sha.5114f85',
+  '1.0.0+21AF26D3--117B344092BD',
+];
+
+export const invalidSemVers: string[] = [
+  '^1.0.0',
+  '~1.0.0',
+  '1.0.0-alpha.',
+  '1.0.0-alpha.1.',
+  '1.0.0-alpha.beta..',
+  '1.0.0-beta.11.',
+  '1.0.0-rc.1.',
+  '1.0.0.',
+  '1.0.0&',
+  '1.0.0^',
+  '1.0.0_',
+  '1.0.0_alpha+001',
+  '1.0.0+^20130313144700',
+  '1.0.0+&20130313144700',
+  '1.0.0-beta^exp.sha.5114f85',
+  '1.0.0+21AF26D3_-117B344092BD',
+];

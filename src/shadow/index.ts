@@ -1,3 +1,3 @@
 export * from './regexp';
-export * from './shadow';
-export * from './shadowSchema';
+export * from './Shadow';
+export * from './TypeOrmShadow';
