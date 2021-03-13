@@ -1,6 +1,6 @@
 {
-  "name": "typeorm-entity-semver",
-  "description": "TypeORM Entity Semantic Versioning SDK.",
+  "name": "typeorm-semver-manager",
+  "description": "Entity Semantic Versioning Manager SDK.",
   "version": "1.0.0",
   "main": "dist/index.js",
   "author": "rmolinamir",
