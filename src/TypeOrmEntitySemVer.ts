@@ -14,7 +14,7 @@ import { diff } from 'deep-object-diff';
 import {
   REGEXP_SEM_VER,
   Shadow,
-  TypeOrmShadow,
+  ShadowEntity,
 } from './shadow';
 
 // Types
@@ -150,15 +150,15 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
       switch (options.incrementFormat) {
         case EntitySemVerIncrement.MAJOR: {
-          semVer = `${oldSemVerMajor + 1}.${oldSemVerMinor}.${oldSemVerPatch}`;
+          semVer = `${Number(oldSemVerMajor) + 1}.${Number(oldSemVerMinor)}.${Number(oldSemVerPatch)}`;
           break;
         }
         case EntitySemVerIncrement.MINOR: {
-          semVer = `${oldSemVerMajor}.${oldSemVerMinor + 1}.${oldSemVerPatch}`;
+          semVer = `${Number(oldSemVerMajor)}.${Number(oldSemVerMinor) + 1}.${Number(oldSemVerPatch)}`;
           break;
         }
         case EntitySemVerIncrement.PATCH: {
-          semVer = `${oldSemVerMajor}.${oldSemVerMinor}.${oldSemVerPatch + 1}`;
+          semVer = `${Number(oldSemVerMajor)}.${Number(oldSemVerMinor)}.${Number(oldSemVerPatch) + 1}`;
           break;
         }
       }
@@ -191,7 +191,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
   // private mongoEntityManager: MongoEntityManager;
 
-  private shadowRepository: MongoRepository<Shadow<T>>;
+  private shadowRepository: MongoRepository<ShadowEntity<T>>;
 
   private initialSemVer: string;
 
@@ -200,7 +200,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
   }
 
   constructor(
-    args: {
+    args?: {
       connection?: Connection;
       shadowedCollectionName?: string;
     },
@@ -208,12 +208,12 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       initialSemVer?: string;
     },
   ) {
-    this.connection = args.connection;
+    this.connection = args?.connection;
 
-    this.shadowRepository = getMongoRepository<TypeOrmShadow<T>>(TypeOrmShadow, this.connection?.name);
+    this.shadowRepository = getMongoRepository<ShadowEntity<T>>(ShadowEntity, this.connection?.name);
 
     // Set dynamic table name as shown in: https://avishwakarma.medium.com/typeorm-dynamic-collection-table-name-when-using-mongodb-6ef3f80dd1a6
-    this.shadowRepository.metadata.tableName = args.shadowedCollectionName ? `${args.shadowedCollectionName}_shadow` : this.shadowRepository.metadata.tableName;
+    this.shadowRepository.metadata.tableName = args?.shadowedCollectionName ? `${args.shadowedCollectionName}_shadow` : this.shadowRepository.metadata.tableName;
 
     // this.mongoEntityManager = getMongoManager(this.connection?.name);
 
@@ -224,14 +224,14 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
     entity: T,
     options?: (
       {
-        customVersion: string;
+        customSemVer: string;
       } |
       {
         preRelease?: string;
         buildMetadata?: string;
       }
     ),
-  ): Promise<Shadow<T>> {
+  ): Promise<ShadowEntity<T>> {
     const entityId = this.getEntityId(entity);
 
 		if (!entityId) {
@@ -240,14 +240,14 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
     let semVer: string;
 
-    if (options && 'customVersion' in options) {
-      const matches = REGEXP_SEM_VER.test(options.customVersion);
+    if (options && 'customSemVer' in options) {
+      const matches = REGEXP_SEM_VER.test(options.customSemVer);
 
       if (!matches) {
-        throw new Error(`Custom Semantic Version [${options.customVersion}] does not match the Semantic Versioning 2.0.0 specs.`);
+        throw new Error(`Custom Semantic Version [${options.customSemVer}] does not match the Semantic Versioning 2.0.0 specs.`);
       }
 
-      semVer = options.customVersion;
+      semVer = options.customSemVer;
     } else {
       semVer = TypeOrmEntitySemVer.serializeSemVer({
         semVer: this.initialSemVer,
@@ -258,7 +258,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
     const now = new Date();
 
-		const shadow = new TypeOrmShadow({
+		const shadow = new ShadowEntity({
       id: entityId,
       version: semVer,
       image: entity,
@@ -267,7 +267,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       updatedAt: now,
     });
 
-    await this.shadowRepository.save(shadow as DeepPartial<Shadow<T>>);
+    await this.shadowRepository.save(shadow as DeepPartial<ShadowEntity<T>>);
 
     return shadow;
   };

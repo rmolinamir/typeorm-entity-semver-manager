@@ -11,14 +11,16 @@ import {
 import { Shadow } from './Shadow';
 
 @Entity('shadow')
-@Unique(['id'])
 @Unique(['id', 'version'])
-export class TypeOrmShadow<T> implements Shadow<T> {
+export class ShadowEntity<T> implements Shadow<T> {
   constructor(args: Shadow<T>) {
-    Object.assign(this, args)
+    Object.assign(this, args);
   }
 
   @ObjectIdColumn()
+  _id: string;
+
+  @Column()
   id: string;
 
   @Column('string')

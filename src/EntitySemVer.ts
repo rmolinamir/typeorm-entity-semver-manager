@@ -22,7 +22,7 @@ export interface EntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow['id
     entity: T,
     options?: (
       {
-        customVersion: string;
+        customSemVer: string;
       } |
       {
         initialSemVer?: string;
