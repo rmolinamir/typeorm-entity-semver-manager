@@ -1,3 +1,3 @@
 export * from './shadow';
-export * from './EntitySemVer';
-export * from './TypeOrmEntitySemVer';
+export * from './SemVerManager';
+export * from './TypeOrmSemVerManager';

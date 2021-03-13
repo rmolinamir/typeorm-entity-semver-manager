@@ -1,13 +1,13 @@
 // Types
 import { Shadow } from './shadow';
 
-export enum EntitySemVerIncrement {
+export enum SemVerManagerIncrement {
   MAJOR, // Version when you make incompatible API changes
   MINOR, // Version when you add functionality in a backwards compatible manner
   PATCH, // Version when you make backwards compatible bug fixes.
 }
 
-export interface EntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow['id'] }> {
+export interface SemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['id'] }> {
   
 	/**
 	 * Inserts an entity into its shadow table by storing a snapshot of the entity (an image),
@@ -51,7 +51,7 @@ export interface EntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow['id
         customSemVer: string;
       } |
       {
-        incrementFormat: EntitySemVerIncrement,
+        incrementFormat: SemVerManagerIncrement,
         preRelease?: string;
         buildMetadata?: string;
       }

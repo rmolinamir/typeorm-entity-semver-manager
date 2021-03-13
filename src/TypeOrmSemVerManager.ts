@@ -19,11 +19,11 @@ import {
 
 // Types
 import {
-  EntitySemVer,
-  EntitySemVerIncrement,
-} from './EntitySemVer';
+  SemVerManager,
+  SemVerManagerIncrement,
+} from './SemVerManager';
 
-export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow['id'] }> implements EntitySemVer<T> {
+export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['id'] }> implements SemVerManager<T> {
   static _DEFAULT_INITIAL_VERSION = '1.0.0';
 
   static _DEFAULT_DELETE_DUMMY_VERSION = '1.0.0';
@@ -127,7 +127,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
         customSemVer: string;
       } |
       {
-        incrementFormat: EntitySemVerIncrement,
+        incrementFormat: SemVerManagerIncrement,
         preRelease?: string;
         buildMetadata?: string;
       }
@@ -141,7 +141,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       patch: oldSemVerPatch,
       preRelease: oldSemVerPreRelease,
       buildMetadata: oldSemVerBuildMetadata,
-    } = TypeOrmEntitySemVer.parseSemVer(oldSemVer);
+    } = TypeOrmSemVerManager.parseSemVer(oldSemVer);
 
     if (options && 'customSemVer' in options) {
       newSemVer = options.customSemVer;
@@ -149,21 +149,21 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       let semVer: string;
 
       switch (options.incrementFormat) {
-        case EntitySemVerIncrement.MAJOR: {
+        case SemVerManagerIncrement.MAJOR: {
           semVer = `${Number(oldSemVerMajor) + 1}.${Number(oldSemVerMinor)}.${Number(oldSemVerPatch)}`;
           break;
         }
-        case EntitySemVerIncrement.MINOR: {
+        case SemVerManagerIncrement.MINOR: {
           semVer = `${Number(oldSemVerMajor)}.${Number(oldSemVerMinor) + 1}.${Number(oldSemVerPatch)}`;
           break;
         }
-        case EntitySemVerIncrement.PATCH: {
+        case SemVerManagerIncrement.PATCH: {
           semVer = `${Number(oldSemVerMajor)}.${Number(oldSemVerMinor)}.${Number(oldSemVerPatch) + 1}`;
           break;
         }
       }
 
-      newSemVer = TypeOrmEntitySemVer.serializeSemVer({
+      newSemVer = TypeOrmSemVerManager.serializeSemVer({
         semVer: semVer,
         preRelease: options?.preRelease ?? oldSemVerPreRelease,
         buildMetadata: options?.buildMetadata ?? oldSemVerBuildMetadata,
@@ -174,7 +174,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       major: newSemVerMajor,
       minor: newSemVerMinor,
       patch: newSemVerPatch,
-    } = TypeOrmEntitySemVer.parseSemVer(newSemVer);
+    } = TypeOrmSemVerManager.parseSemVer(newSemVer);
 
     const oldSemVerBaseNumber = Number(`${oldSemVerMajor}${oldSemVerMinor}${oldSemVerPatch}`);
     const newSemVerBaseNumber = Number(`${newSemVerMajor}${newSemVerMinor}${newSemVerPatch}`);
@@ -217,7 +217,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
     // this.mongoEntityManager = getMongoManager(this.connection?.name);
 
-    this.initialSemVer = options?.initialSemVer || TypeOrmEntitySemVer._DEFAULT_INITIAL_VERSION;
+    this.initialSemVer = options?.initialSemVer || TypeOrmSemVerManager._DEFAULT_INITIAL_VERSION;
   }
 
   public async insert(
@@ -249,7 +249,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
       semVer = options.customSemVer;
     } else {
-      semVer = TypeOrmEntitySemVer.serializeSemVer({
+      semVer = TypeOrmSemVerManager.serializeSemVer({
         semVer: this.initialSemVer,
         preRelease: options?.preRelease,
         buildMetadata: options?.buildMetadata,
@@ -281,7 +281,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
         customSemVer: string;
       } |
       {
-        incrementFormat: EntitySemVerIncrement,
+        incrementFormat: SemVerManagerIncrement,
         preRelease?: string;
         buildMetadata?: string;
       }
@@ -295,7 +295,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
 
     const oldSemVer = shadow.version;
 
-    const newSemVer = TypeOrmEntitySemVer.increaseSemVer(oldSemVer, options);
+    const newSemVer = TypeOrmSemVerManager.increaseSemVer(oldSemVer, options);
 
     shadow.version = newSemVer;
 
@@ -317,7 +317,7 @@ export class TypeOrmEntitySemVer<T extends { id: Shadow['id'] } | { _id: Shadow[
       buildMetadata?: string;
     },
   ): Promise<void> {
-    let dummySemVer = TypeOrmEntitySemVer._DEFAULT_DELETE_DUMMY_VERSION;
+    let dummySemVer = TypeOrmSemVerManager._DEFAULT_DELETE_DUMMY_VERSION;
 
     if (options?.preRelease) {
       dummySemVer = `${dummySemVer}_${options.preRelease}`;

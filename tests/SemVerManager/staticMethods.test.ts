@@ -1,14 +1,14 @@
 import faker from 'faker';
-import { EntitySemVerIncrement, TypeOrmEntitySemVer } from '../../src';
+import { SemVerManagerIncrement, TypeOrmSemVerManager } from '../../src';
 
-describe('TypeOrmEntitySemVer static methods', () => {
+describe('TypeOrmSemVerManager static methods', () => {
   describe('serializeSemVer API works correctly', () => {
     test('correctly serializes a SemVer', () => {
       const semVer = faker.system.semver();
       const preRelease = 'alpha1';
       const buildMetadata = 'BX012399A1';
 
-      const serializedSemVer = TypeOrmEntitySemVer.serializeSemVer({
+      const serializedSemVer = TypeOrmSemVerManager.serializeSemVer({
         semVer,
         preRelease,
         buildMetadata,
@@ -25,7 +25,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
       const buildMetadata = 'BX012399A1';
 
       expect(() => {
-        TypeOrmEntitySemVer.serializeSemVer({
+        TypeOrmSemVerManager.serializeSemVer({
           semVer,
           preRelease,
           buildMetadata,
@@ -38,7 +38,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
     test('correctly parses a SemVer', () => {
       const semVer = '1.0.0-alpha1+21AF26D3--117B344092BD';
 
-      const parsedSemVer = TypeOrmEntitySemVer.parseSemVer(semVer);
+      const parsedSemVer = TypeOrmSemVerManager.parseSemVer(semVer);
 
       expect(parsedSemVer).toBeInstanceOf(Object);
 
@@ -54,7 +54,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
       const semVer = '~1.0.0';
 
       expect(() => {
-        TypeOrmEntitySemVer.parseSemVer(semVer);
+        TypeOrmSemVerManager.parseSemVer(semVer);
       }).toThrow(`Semantic Version [${semVer}] does not match the Semantic Versioning 2.0.0 specs.`);
 
     });
@@ -66,7 +66,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
 
       const customSemVer = '1.0.2-alpha1+BX012399A1';
 
-      const increasedSemVer = TypeOrmEntitySemVer.increaseSemVer(
+      const increasedSemVer = TypeOrmSemVerManager.increaseSemVer(
         semVer,
         {
           customSemVer,
@@ -76,21 +76,21 @@ describe('TypeOrmEntitySemVer static methods', () => {
       expect(increasedSemVer).toBe(customSemVer);
     });
 
-    test('correctly increases a SemVer using EntitySemVerIncrement parameters', () => {
+    test('correctly increases a SemVer using SemVerManagerIncrement parameters', () => {
       const semVer = '0.0.0';
       const preRelease = 'alpha1';
       const buildMetadata = 'BX012399A1';
 
       const fixtures = [
-        { expectedSemVer: '1.0.0', incrementFormat: EntitySemVerIncrement.MAJOR },
-        { expectedSemVer: '0.1.0', incrementFormat: EntitySemVerIncrement.MINOR },
-        { expectedSemVer: '0.0.1', incrementFormat: EntitySemVerIncrement.PATCH },
+        { expectedSemVer: '1.0.0', incrementFormat: SemVerManagerIncrement.MAJOR },
+        { expectedSemVer: '0.1.0', incrementFormat: SemVerManagerIncrement.MINOR },
+        { expectedSemVer: '0.0.1', incrementFormat: SemVerManagerIncrement.PATCH },
       ];
 
       for (const { expectedSemVer, incrementFormat } of fixtures) {
         // console.log('DEBUG - incrementFormat: ', incrementFormat);
 
-        const increasedSemVer = TypeOrmEntitySemVer.increaseSemVer(
+        const increasedSemVer = TypeOrmSemVerManager.increaseSemVer(
           semVer,
           {
             incrementFormat,
@@ -99,7 +99,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
           },
         );
 
-        expect(increasedSemVer).toBe(TypeOrmEntitySemVer.serializeSemVer({
+        expect(increasedSemVer).toBe(TypeOrmSemVerManager.serializeSemVer({
           semVer: expectedSemVer,
           preRelease,
           buildMetadata,
@@ -113,7 +113,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
       const customSemVer = '0.0.2-alpha1+BX012399A1';
 
       expect(() => {
-        TypeOrmEntitySemVer.increaseSemVer(
+        TypeOrmSemVerManager.increaseSemVer(
           semVer,
           {
             customSemVer,
@@ -126,10 +126,10 @@ describe('TypeOrmEntitySemVer static methods', () => {
       const semVer = '~1.0.0';
 
       expect(() => {
-        TypeOrmEntitySemVer.increaseSemVer(
+        TypeOrmSemVerManager.increaseSemVer(
           semVer,
           {
-            incrementFormat: EntitySemVerIncrement.MAJOR,
+            incrementFormat: SemVerManagerIncrement.MAJOR,
           },
         );
       }).toThrow(`Semantic Version [${semVer}] does not match the Semantic Versioning 2.0.0 specs.`);
@@ -141,7 +141,7 @@ describe('TypeOrmEntitySemVer static methods', () => {
       const customSemVer = '~1.0.2';
 
       expect(() => {
-        TypeOrmEntitySemVer.increaseSemVer(
+        TypeOrmSemVerManager.increaseSemVer(
           semVer,
           {
             customSemVer,

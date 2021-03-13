@@ -1,17 +1,17 @@
 import faker from 'faker';
 import { Connection, createConnection } from 'typeorm';
-import { TypeOrmEntitySemVer } from '../../src';
+import { TypeOrmSemVerManager } from '../../src';
 import { Person, PersonEntity, connectionOptions, generatePerson } from './fixtures';
 
 let connection: Connection;
 
-let typeOrmEntitySemVer: TypeOrmEntitySemVer<Person>;
+let typeOrmSemVerManager: TypeOrmSemVerManager<Person>;
 
-describe('TypeOrmEntitySemVer insert API', () => {
+describe('TypeOrmSemVerManager insert API', () => {
   beforeAll(async () => {
     connection = await createConnection(connectionOptions);
 
-    typeOrmEntitySemVer = new TypeOrmEntitySemVer({ connection });
+    typeOrmSemVerManager = new TypeOrmSemVerManager({ connection });
   });
 
   afterAll(async () => {
@@ -24,7 +24,7 @@ describe('TypeOrmEntitySemVer insert API', () => {
 
       await connection.manager.save(typeOrmPerson);
 
-      const shadow = await typeOrmEntitySemVer.insert(typeOrmPerson);
+      const shadow = await typeOrmSemVerManager.insert(typeOrmPerson);
 
       expect(shadow).toBeTruthy();
 
@@ -50,7 +50,7 @@ describe('TypeOrmEntitySemVer insert API', () => {
 
       await connection.manager.save(typeOrmPerson);
 
-      const shadow = await typeOrmEntitySemVer.insert(
+      const shadow = await typeOrmSemVerManager.insert(
         typeOrmPerson,
         {
           customSemVer: semVer,
@@ -70,7 +70,7 @@ describe('TypeOrmEntitySemVer insert API', () => {
 
       await connection.manager.save(typeOrmPerson);
 
-      const shadow = await typeOrmEntitySemVer.insert(
+      const shadow = await typeOrmSemVerManager.insert(
         typeOrmPerson,
         {
           preRelease,
@@ -93,7 +93,7 @@ describe('TypeOrmEntitySemVer insert API', () => {
       await connection.manager.save(typeOrmPerson);
 
       await expect(async () => {
-        await typeOrmEntitySemVer.insert(
+        await typeOrmSemVerManager.insert(
           typeOrmPerson,
           {
             customSemVer: semVer,
@@ -111,7 +111,7 @@ describe('TypeOrmEntitySemVer insert API', () => {
       await connection.manager.save(typeOrmPerson);
 
       await expect(async () => {
-        await typeOrmEntitySemVer.insert(
+        await typeOrmSemVerManager.insert(
           typeOrmPerson,
           {
             preRelease,
