@@ -38,8 +38,11 @@ export interface SemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['i
 	 * Updates the shadow of an entity and increases its SemVer following the 2.0.0 specs. The changes
    * of the image are also stored.
    * 
-   * If the current shadow in the database does not have a matching ID, the operation aborts with an
-   * error. After the update is successful, shadow's SemVer is updated to the new version.
+   * If the current shadow in the database does not have a matching ID, the operation aborts and returns
+   * null. If the document to update has no changes relative to the stored image, the operation
+   * also aborts and returns null.
+   * 
+   * After the update is successful, the shadow's SemVer is updated to the new version.
    * 
 	 * @param entity - Entity Plain Object.
 	 * @param options - Options object.
@@ -56,7 +59,7 @@ export interface SemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['i
         buildMetadata?: string;
       }
     ),
-  ): Promise<Shadow<T>>;
+  ): Promise<Shadow<T> | null>;
 
   // updateMany();
 
@@ -66,6 +69,8 @@ export interface SemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['i
    * with a dummy version to mark the deletion. This dummy version can contain optional
    * meta-data (such as who deleted the object, and when)
    * 
+   * After the operation ends, `true` will be returned if successful, otherwise returns
+   * `false`.
    * 
 	 * @param entity - Entity Plain Object.
 	 * @param options - Options object.
@@ -76,7 +81,7 @@ export interface SemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['i
       preRelease?: string;
       buildMetadata?: string;
     },
-  ): Promise<void>;
+  ): Promise<true | false>;
 
   // removeMany();
 }

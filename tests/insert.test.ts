@@ -1,17 +1,17 @@
 import faker from 'faker';
 import { Connection, createConnection } from 'typeorm';
-import { TypeOrmSemVerManager } from '../../src';
+import { EntitySemVerManager } from '../src';
 import { Person, PersonEntity, connectionOptions, generatePerson } from './fixtures';
 
 let connection: Connection;
 
-let typeOrmSemVerManager: TypeOrmSemVerManager<Person>;
+let entitySemVerManager: EntitySemVerManager<Person>;
 
-describe('TypeOrmSemVerManager insert API', () => {
+describe('EntitySemVerManager insert API', () => {
   beforeAll(async () => {
     connection = await createConnection(connectionOptions);
 
-    typeOrmSemVerManager = new TypeOrmSemVerManager({ connection });
+    entitySemVerManager = new EntitySemVerManager({ connection });
   });
 
   afterAll(async () => {
@@ -20,21 +20,21 @@ describe('TypeOrmSemVerManager insert API', () => {
 
   describe('inserts API works correctly', () => {
     test('correctly inserts data and creates the shadow', async () => {
-      const typeOrmPerson = new PersonEntity(generatePerson());
+      const person = new PersonEntity(generatePerson());
 
-      await connection.manager.save(typeOrmPerson);
+      await connection.manager.save(person);
 
-      const shadow = await typeOrmSemVerManager.insert(typeOrmPerson);
+      const shadow = await entitySemVerManager.insert(person);
 
       expect(shadow).toBeTruthy();
 
-      expect(shadow._id).not.toBe(typeOrmPerson._id);
+      expect(shadow._id).not.toBe(person._id);
 
-      expect(shadow.id).toBe(typeOrmPerson.id);
+      expect(shadow.id).toBe(person.id);
 
       expect(shadow.version).toBeTruthy();
 
-      expect(shadow.image).toMatchObject(typeOrmPerson);
+      expect(shadow.image).toMatchObject(person);
 
       expect(shadow.changes).toHaveLength(0);
 
@@ -46,12 +46,12 @@ describe('TypeOrmSemVerManager insert API', () => {
     test('correctly inserts data with custom SemVer parameter', async () => {
       const semVer = faker.system.semver();
 
-      const typeOrmPerson = new PersonEntity(generatePerson());
+      const person = new PersonEntity(generatePerson());
 
-      await connection.manager.save(typeOrmPerson);
+      await connection.manager.save(person);
 
-      const shadow = await typeOrmSemVerManager.insert(
-        typeOrmPerson,
+      const shadow = await entitySemVerManager.insert(
+        person,
         {
           customSemVer: semVer,
         },
@@ -66,12 +66,12 @@ describe('TypeOrmSemVerManager insert API', () => {
       const preRelease = 'alpha1';
       const buildMetadata = 'BX012399A1';
 
-      const typeOrmPerson = new PersonEntity(generatePerson());
+      const person = new PersonEntity(generatePerson());
 
-      await connection.manager.save(typeOrmPerson);
+      await connection.manager.save(person);
 
-      const shadow = await typeOrmSemVerManager.insert(
-        typeOrmPerson,
+      const shadow = await entitySemVerManager.insert(
+        person,
         {
           preRelease,
           buildMetadata,
@@ -88,13 +88,13 @@ describe('TypeOrmSemVerManager insert API', () => {
     test('throws an error when custom SemVer parameter is invalid', async () => {
       const semVer = '~1.0.0';
 
-      const typeOrmPerson = new PersonEntity(generatePerson());
+      const person = new PersonEntity(generatePerson());
 
-      await connection.manager.save(typeOrmPerson);
+      await connection.manager.save(person);
 
       await expect(async () => {
-        await typeOrmSemVerManager.insert(
-          typeOrmPerson,
+        await entitySemVerManager.insert(
+          person,
           {
             customSemVer: semVer,
           },
@@ -106,13 +106,13 @@ describe('TypeOrmSemVerManager insert API', () => {
       const preRelease = '^alpha1';
       const buildMetadata = 'BX012399A1';
 
-      const typeOrmPerson = new PersonEntity(generatePerson());
+      const person = new PersonEntity(generatePerson());
 
-      await connection.manager.save(typeOrmPerson);
+      await connection.manager.save(person);
 
       await expect(async () => {
-        await typeOrmSemVerManager.insert(
-          typeOrmPerson,
+        await entitySemVerManager.insert(
+          person,
           {
             preRelease,
             buildMetadata,

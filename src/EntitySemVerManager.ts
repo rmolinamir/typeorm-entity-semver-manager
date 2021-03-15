@@ -13,7 +13,6 @@ import { diff } from 'deep-object-diff';
 // Locals
 import {
   REGEXP_SEM_VER,
-  Shadow,
   ShadowEntity,
 } from './shadow';
 
@@ -23,10 +22,12 @@ import {
   SemVerManagerIncrement,
 } from './SemVerManager';
 
-export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow['id'] }> implements SemVerManager<T> {
+export class EntitySemVerManager<T extends { id: ShadowEntity<T>['id'] } | { _id: ShadowEntity<T>['id'] }> implements SemVerManager<T> {
+  static _DEFAULT_SHADOW_COLLECTION_NAME = 'shadow';
+
   static _DEFAULT_INITIAL_VERSION = '1.0.0';
 
-  static _DEFAULT_DELETE_DUMMY_VERSION = '1.0.0';
+  static _DEFAULT_DELETE_DUMMY_VERSION = '0.0.0';
 
   /**
    * Serializes a Semantic Version (SemVer) based on a base SemVer (major, minor, and patch components),
@@ -141,7 +142,7 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
       patch: oldSemVerPatch,
       preRelease: oldSemVerPreRelease,
       buildMetadata: oldSemVerBuildMetadata,
-    } = TypeOrmSemVerManager.parseSemVer(oldSemVer);
+    } = EntitySemVerManager.parseSemVer(oldSemVer);
 
     if (options && 'customSemVer' in options) {
       newSemVer = options.customSemVer;
@@ -163,7 +164,7 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
         }
       }
 
-      newSemVer = TypeOrmSemVerManager.serializeSemVer({
+      newSemVer = EntitySemVerManager.serializeSemVer({
         semVer: semVer,
         preRelease: options?.preRelease ?? oldSemVerPreRelease,
         buildMetadata: options?.buildMetadata ?? oldSemVerBuildMetadata,
@@ -174,7 +175,7 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
       major: newSemVerMajor,
       minor: newSemVerMinor,
       patch: newSemVerPatch,
-    } = TypeOrmSemVerManager.parseSemVer(newSemVer);
+    } = EntitySemVerManager.parseSemVer(newSemVer);
 
     const oldSemVerBaseNumber = Number(`${oldSemVerMajor}${oldSemVerMinor}${oldSemVerPatch}`);
     const newSemVerBaseNumber = Number(`${newSemVerMajor}${newSemVerMinor}${newSemVerPatch}`);
@@ -189,22 +190,20 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
 
   public connection?: Connection;
 
-  // private mongoEntityManager: MongoEntityManager;
+  // protected mongoEntityManager: MongoEntityManager;
 
-  private shadowRepository: MongoRepository<ShadowEntity<T>>;
+  protected shadowRepository: MongoRepository<ShadowEntity<T>>;
 
-  private initialSemVer: string;
+  protected initialSemVer: string;
 
-  private getEntityId(entity: T): Shadow['id'] | undefined {
-    return (entity as { id: Shadow['id'] }).id || (entity as { _id: Shadow['id'] })._id;
+  protected getEntityId(entity: T): ShadowEntity<T>['id'] | undefined {
+    return (entity as { id: ShadowEntity<T>['id'] }).id || (entity as { _id: ShadowEntity<T>['id'] })._id;
   }
 
   constructor(
     args?: {
       connection?: Connection;
       shadowedCollectionName?: string;
-    },
-    options?: {
       initialSemVer?: string;
     },
   ) {
@@ -213,11 +212,15 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
     this.shadowRepository = getMongoRepository<ShadowEntity<T>>(ShadowEntity, this.connection?.name);
 
     // Set dynamic table name as shown in: https://avishwakarma.medium.com/typeorm-dynamic-collection-table-name-when-using-mongodb-6ef3f80dd1a6
-    this.shadowRepository.metadata.tableName = args?.shadowedCollectionName ? `${args.shadowedCollectionName}_shadow` : this.shadowRepository.metadata.tableName;
+    this.shadowRepository.metadata.tableName = (
+      args?.shadowedCollectionName ?
+        `${args.shadowedCollectionName}_${EntitySemVerManager._DEFAULT_SHADOW_COLLECTION_NAME}` :
+        this.shadowRepository.metadata.tableName
+    );
 
     // this.mongoEntityManager = getMongoManager(this.connection?.name);
 
-    this.initialSemVer = options?.initialSemVer || TypeOrmSemVerManager._DEFAULT_INITIAL_VERSION;
+    this.initialSemVer = args?.initialSemVer || EntitySemVerManager._DEFAULT_INITIAL_VERSION;
   }
 
   public async insert(
@@ -249,7 +252,7 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
 
       semVer = options.customSemVer;
     } else {
-      semVer = TypeOrmSemVerManager.serializeSemVer({
+      semVer = EntitySemVerManager.serializeSemVer({
         semVer: this.initialSemVer,
         preRelease: options?.preRelease,
         buildMetadata: options?.buildMetadata,
@@ -286,24 +289,32 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
         buildMetadata?: string;
       }
     ),
-  ): Promise<Shadow<T>> {
+  ): Promise<ShadowEntity<T> | null> {
     const shadow = await this.shadowRepository.findOne({ id: this.getEntityId(entity) });
 
     if (!shadow) {
-      throw new Error('Document to update not found in shadow collection.')
+      return null;
+    }
+
+    const change = diff(shadow.image, entity);
+
+    if (Object.keys(change).length === 0) {
+      return null;
     }
 
     const oldSemVer = shadow.version;
 
-    const newSemVer = TypeOrmSemVerManager.increaseSemVer(oldSemVer, options);
+    const newSemVer = EntitySemVerManager.increaseSemVer(oldSemVer, options);
 
     shadow.version = newSemVer;
 
-    shadow.changes.push({ version: oldSemVer, change: diff(shadow.image, entity) });
+    shadow.image = entity;
+
+    shadow.changes.push({ version: oldSemVer, change });
 
     shadow.updatedAt = new Date();
 
-    await this.shadowRepository.updateOne({ id: this.getEntityId(entity) }, shadow);
+    await this.shadowRepository.updateOne({ id: this.getEntityId(entity) }, { $set: shadow });
 
     return shadow;
   };
@@ -316,30 +327,30 @@ export class TypeOrmSemVerManager<T extends { id: Shadow['id'] } | { _id: Shadow
       preRelease?: string;
       buildMetadata?: string;
     },
-  ): Promise<void> {
-    let dummySemVer = TypeOrmSemVerManager._DEFAULT_DELETE_DUMMY_VERSION;
+  ): Promise<boolean> {
+    const semVer = EntitySemVerManager.serializeSemVer({
+      semVer: EntitySemVerManager._DEFAULT_DELETE_DUMMY_VERSION,
+      preRelease: options?.preRelease,
+      buildMetadata: options?.buildMetadata,
+    });
 
-    if (options?.preRelease) {
-      dummySemVer = `${dummySemVer}_${options.preRelease}`;
-    }
-
-    if (options?.buildMetadata) {
-      dummySemVer = `${dummySemVer}+${options.buildMetadata}`;
-    }
+    const id = this.getEntityId(entity);
 
     const { modifiedCount } = await this.shadowRepository.updateOne(
-      { id: this.getEntityId(entity) },
+      { id },
       {
-        id: new Date().getTime().toString(),
-        version: dummySemVer,
+        $set: {
+          id: `DELETED_${id}_${new Date().getTime().toString()}`,
+          version: semVer,
+        },
       },
     );
 
     if (modifiedCount === 0) {
-      throw new Error('Document to delete not found in shadow collection.')
+      return false;
     }
 
-    return;
+    return true;
   };
 
   // removeMany();

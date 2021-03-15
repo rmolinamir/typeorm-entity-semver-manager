@@ -7,7 +7,7 @@ import {
   Unique,
   ConnectionOptions,
 } from 'typeorm';
-import { ShadowEntity } from '../../src';
+import { ShadowEntity } from '../src';
 
 export const validSemVers: string[] = [ // Valid SemVers taken from `https://semver.org/`
   '1.0.0-alpha',
@@ -140,6 +140,7 @@ export const connectionOptions: ConnectionOptions = {
   database: 'test',
   entities: [PersonEntity, ShadowEntity],
   synchronize: true,
+  useUnifiedTopology: true,
 };
 
 export function generatePerson(id: string = faker.random.uuid()): Person {

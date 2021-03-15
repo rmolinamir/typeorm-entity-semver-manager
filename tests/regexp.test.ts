@@ -1,4 +1,4 @@
-import { REGEXP_SEM_VER } from '../../src';
+import { REGEXP_SEM_VER } from '../src';
 import { invalidSemVers, validSemVers } from './fixtures';
 
 describe('REGEXP_SEM_VER works as expected', () => {
