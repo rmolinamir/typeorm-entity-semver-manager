@@ -11,7 +11,7 @@
   "scripts": {
     "watch": "tsc -w",
     "build": "tsc -b",
-    "test": "npx jest --watch",
+    "test": "npx jest --watch --runInBand",
     "lint": "eslint --ext .ts --ext .js src tests",
     "prepublish": "npm build"
   },

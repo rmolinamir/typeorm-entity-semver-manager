@@ -11,7 +11,7 @@ module.exports = {
   ],
   globals: {
     'ts-jest': {
-      tsConfig: '<rootDir>/tsconfig.test.json',
+      tsconfig: '<rootDir>/tsconfig.test.json',
       diagnostics: false, // Disabling diagnostics
       // pathRegex: /\.(spec|test)\.ts$/, // Disabling by pathRegex
     },
